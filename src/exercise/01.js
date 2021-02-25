@@ -9,7 +9,7 @@ const countReducer = (state, action) => {
     case 'INCREMENT':
       return {count: state.count + step}
     default:
-      throw new Error('Unhandled action type')
+      throw new Error(`Unhandled action type: ${type}`);
   }
 };
 
