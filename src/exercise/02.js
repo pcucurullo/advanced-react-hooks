@@ -27,14 +27,7 @@ function asyncReducer(state, action) {
   }
 }
 
-function useAsync (asyncCallback, initialState) {
-  const [state, doDispatch] = React.useReducer(asyncReducer, {
-    status: 'idle',
-    data: null,
-    error: null,
-    ...initialState
-  })
-
+function useSafeDispatch (dispatch) {
   const isMounted = React.useRef(false);
 
   React.useEffect(() => {
@@ -46,13 +39,23 @@ function useAsync (asyncCallback, initialState) {
     }
   }, []); // Empty deps runs on mount/unmount instead of every rerender
 
-  const dispatch = React.useCallback((...args) => {
+  return React.useCallback((...args) => {
     // only dispatch if mounted
     if (isMounted.current) {
-      doDispatch(...args);
+      dispatch(...args);
     }
-  }, []);
+  }, [dispatch]);
+}
 
+function useAsync (asyncCallback, initialState) {
+  const [state, doDispatch] = React.useReducer(asyncReducer, {
+    status: 'idle',
+    data: null,
+    error: null,
+    ...initialState
+  })
+
+  const dispatch = useSafeDispatch(doDispatch);
   const run = React.useCallback(promise => {
       dispatch({type: 'pending'})
       promise.then(
