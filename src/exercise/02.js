@@ -28,12 +28,30 @@ function asyncReducer(state, action) {
 }
 
 function useAsync (asyncCallback, initialState) {
-  const [state, dispatch] = React.useReducer(asyncReducer, {
+  const [state, doDispatch] = React.useReducer(asyncReducer, {
     status: 'idle',
     data: null,
     error: null,
     ...initialState
   })
+
+  const isMounted = React.useRef(false);
+
+  React.useEffect(() => {
+    // will run when componentDidMount
+    isMounted.current = true;
+    return () => {
+      // Cleanup function runs when component is unmounted
+      isMounted.current = false;
+    }
+  }, []); // Empty deps runs on mount/unmount instead of every rerender
+
+  const dispatch = React.useCallback((...args) => {
+    // only dispatch if mounted
+    if (isMounted.current) {
+      doDispatch(...args);
+    }
+  }, []);
 
   const run = React.useCallback(promise => {
       dispatch({type: 'pending'})
@@ -45,7 +63,7 @@ function useAsync (asyncCallback, initialState) {
           dispatch({type: 'rejected', error})
         },
       )
-  }, []);
+  }, [dispatch]);
 
   return {...state, run};
 }
